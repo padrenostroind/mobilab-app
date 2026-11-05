@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MobiLab Gestionale</title>
+    <style>
+        :root {
+            --bg: #121212;
+            --card: #1e1e1e;
+            --accent: #00e676;
+            --accent-blue: #2979ff;
+            --text: #ffffff;
+            --text-muted: #aaaaaa;
+            --danger: #ff5252;
+            --warning: #ffb300;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 12px; }
+        header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #333; margin-bottom: 15px; }
+        header h1 { font-size: 1.4rem; color: var(--accent); letter-spacing: 0.5px; }
+        
+        /* Layout adattivo: 1 colonna da chiuso, 2 colonne da aperto sul Fold */
+        .fold-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+        @media (min-width: 650px) {
+            .fold-grid { grid-template-columns: 1.2fr 1fr; align-items: start; }
+        }
+
+        .panel { background: var(--card); border-radius: 12px; padding: 15px; border: 1px solid #2a2a2a; margin-bottom: 16px; }
+        .panel h2 { font-size: 1.1rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #333; padding-bottom: 8px; }
+
+        /* Form compatti */
+        .form-row { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+        input, select { flex: 1; min-width: 120px; padding: 10px; border-radius: 8px; border: 1px solid #444; background: #262626; color: #fff; font-size: 0.95rem; }
+        button { padding: 10px 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
+        .btn-add { background: var(--accent); color: #000; width: 100%; margin-top: 4px; }
+        .btn-sm { padding: 6px 10px; font-size: 0.8rem; }
+        .btn-del { background: var(--danger); color: #fff; }
+        .btn-status { background: var(--accent-blue); color: #fff; }
+
+        /* Liste ed elementi */
+        .item-list { list-style: none; display: flex; flex-direction: column; gap: 8px; max-height: 65vh; overflow-y: auto; }
+        .item-card { background: #262626; padding: 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; gap: 10px; border-left: 4px solid var(--accent); }
+        .item-card.wait { border-left-color: var(--warning); }
+        .item-card.done { border-left-color: var(--accent-blue); opacity: 0.8; }
+        .item-info h3 { font-size: 1rem; margin-bottom: 3px; }
+        .item-info p { font-size: 0.82rem; color: var(--text-muted); }
+        .badge { display: inline-block; padding: 3px 7px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; margin-top: 4px; background: #333; }
+        .actions { display: flex; align-items: center; gap: 6px; }
+        .qty-box { font-size: 1.1rem; font-weight: bold; min-width: 28px; text-align: center; }
+        .low-stock { color: var(--danger); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🔧 MobiLab Gestionale</h1>
+        <span style="font-size: 0.8rem; color: var(--text-muted);">Z Fold Edition</span>
+    </header>
+
+    <div class="fold-grid">
+        <!-- COLONNA SINISTRA: LAVORI E CALENDARIO -->
+        <div>
+            <div class="panel">
+                <h2>📅 Nuovo Lavoro / Riparazione</h2>
+                <div class="form-row">
+                    <input type="text" id="jobClient" placeholder="Cliente (es. Mario Rossi)">
+                    <input type="text" id="jobDevice" placeholder="Dispositivo (es. iPhone 13)">
+                </div>
+                <div class="form-row">
+                    <input type="text" id="jobIssue" placeholder="Intervento (es. Cambio Display OLED)">
+                    <input type="date" id="jobDate">
+                </div>
+                <div class="form-row">
+                    <input type="number" id="jobPrice" placeholder="Prezzo €">
+                    <select id="jobStatus">
+                        <option value="In Corso">🔧 In Corso</option>
+                        <option value="Attesa Ricambi">⏳ Attesa Ricambi</option>
+                        <option value="Pronto">✅ Pronto da consegnare</option>
+                    </select>
+                </div>
+                <button class="btn-add" onclick="addJob()">+ Aggiungi al Calendario Lavori</button>
+            </div>
+
+            <div class="panel">
+                <h2>📋 Lavori in Corso & Calendario</h2>
+                <ul id="jobList" class="item-list"></ul>
+            </div>
+        </div>
+
+        <!-- COLONNA DESTRA: MAGAZZINO RICAMBI -->
+        <div>
+            <div class="panel">
+                <h2>📦 Aggiungi Articolo in Magazzino</h2>
+                <div class="form-row">
+                    <input type="text" id="invName" placeholder="Articolo (es. Display iPhone 12 OLED)">
+                    <input type="number" id="invQty" placeholder="Quantità" value="1">
+                </div>
+                <div class="form-row">
+                    <input type="text" id="invCategory" placeholder="Categoria (es. Display, Batterie, Usato)">
+                </div>
+                <button class="btn-add" onclick="addInv()">+ Carica in Magazzino</button>
+            </div>
+
+            <div class="panel">
+                <h2>🗃️ Giacenze Magazzino</h2>
+                <ul id="invList" class="item-list"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let jobs = JSON.parse(localStorage.getItem('mobilab_jobs')) || [];
+        let inventory = JSON.parse(localStorage.getItem('mobilab_inv')) || [];
+
+        // Imposta la data di oggi di default
+        document.getElementById('jobDate').valueAsDate = new Date();
+
+        function saveData() {
+            localStorage.setItem('mobilab_jobs', JSON.stringify(jobs));
+            localStorage.setItem('mobilab_inv', JSON.stringify(inventory));
+            render();
+        }
+
+        function addJob() {
+            const client = document.getElementById('jobClient').value.trim();
+            const device = document.getElementById('jobDevice').value.trim();
+            const issue = document.getElementById('jobIssue').value.trim();
+            const date = document.getElementById('jobDate').value;
+            const price = document.getElementById('jobPrice').value || '0';
+            const status = document.getElementById('jobStatus').value;
+
+            if (!client || !device) return alert("Inserisci almeno Cliente e Dispositivo!");
+
+            jobs.unshift({ id: Date.now(), client, device, issue, date, price, status });
+            document.getElementById('jobClient').value = '';
+            document.getElementById('jobDevice').value = '';
+            document.getElementById('jobIssue').value = '';
+            document.getElementById('jobPrice').value = '';
+            saveData();
+        }
+
+        function cycleStatus(id) {
+            const states = ['In Corso', 'Attesa Ricambi', 'Pronto'];
+            jobs = jobs.map(j => {
+                if (j.id === id) {
+                    let next = (states.indexOf(j.status) + 1) % states.length;
+                    j.status = states[next];
+                }
+                return j;
+            });
+            saveData();
+        }
+
+        function deleteJob(id) {
+            if(confirm("Eliminare questo lavoro?")) {
+                jobs = jobs.filter(j => j.id !== id);
+                saveData();
+            }
+        }
+
+        function addInv() {
+            const name = document.getElementById('invName').value.trim();
+            const qty = parseInt(document.getElementById('invQty').value) || 0;
+            const cat = document.getElementById('invCategory').value.trim() || 'Generico';
+
+            if (!name) return alert("Inserisci il nome del ricambio o articolo!");
+
+            inventory.unshift({ id: Date.now(), name, qty, cat });
+            document.getElementById('invName').value = '';
+            document.getElementById('invQty').value = '1';
+            saveData();
+        }
+
+        function updateQty(id, delta) {
+            inventory = inventory.map(item => {
+                if (item.id === id) item.qty = Math.max(0, item.qty + delta);
+                return item;
+            });
+            saveData();
+        }
+
+        function deleteInv(id) {
+            if(confirm("Rimuovere l'articolo dal magazzino?")) {
+                inventory = inventory.filter(i => i.id !== id);
+                saveData();
+            }
+        }
+
+        function render() {
+            const jobList = document.getElementById('jobList');
+            jobList.innerHTML = jobs.length ? '' : '<p style="color:#777; font-size:0.9rem;">Nessun lavoro in calendario.</p>';
+            
+            jobs.forEach(j => {
+                let statusClass = j.status === 'Attesa Ricambi' ? 'wait' : (j.status === 'Pronto' ? 'done' : '');
+                jobList.innerHTML += `
+                    <li class="item-card ${statusClass}">
+                        <div class="item-info">
+                            <h3>${j.device} - ${j.client}</h3>
+                            <p>${j.issue || 'Riparazione'} • 📅 ${j.date} • 💶 €${j.price}</p>
+                            <span class="badge">${j.status}</span>
+                        </div>
+                        <div class="actions">
+                            <button class="btn-sm btn-status" onclick="cycleStatus(${j.id})">Stato</button>
+                            <button class="btn-sm btn-del" onclick="deleteJob(${j.id})">✕</button>
+                        </div>
+                    </li>
+                `;
+            });
+
+            const invList = document.getElementById('invList');
+            invList.innerHTML = inventory.length ? '' : '<p style="color:#777; font-size:0.9rem;">Magazzino vuoto.</p>';
+
+            inventory.forEach(i => {
+                let lowClass = i.qty === 0 ? 'low-stock' : '';
+                invList.innerHTML += `
+                    <li class="item-card">
+                        <div class="item-info">
+                            <h3>${i.name}</h3>
+                            <p>Categoria: ${i.cat}</p>
+                        </div>
+                        <div class="actions">
+                            <button class="btn-sm" style="background:#444;color:#fff;" onclick="updateQty(${i.id}, -1)">-</button>
+                            <span class="qty-box ${lowClass}">${i.qty}</span>
+                            <button class="btn-sm" style="background:#444;color:#fff;" onclick="updateQty(${i.id}, 1)">+</button>
+                            <button class="btn-sm btn-del" onclick="deleteInv(${i.id})">✕</button>
+                        </div>
+                    </li>
+                `;
+            });
+        }
+
+        render();
+    </script>
+</body>
+</html>

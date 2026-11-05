@@ -20,7 +20,6 @@
         header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #333; margin-bottom: 15px; }
         header h1 { font-size: 1.4rem; color: var(--accent); letter-spacing: 0.5px; }
         
-        /* Layout adattivo per Z Fold: 1 colonna da chiuso, griglia da aperto */
         .fold-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
         @media (min-width: 750px) {
             .fold-grid { grid-template-columns: 1fr 1fr; }
@@ -36,10 +35,11 @@
         .btn-sm { padding: 6px 10px; font-size: 0.8rem; }
         .btn-del { background: var(--danger); color: #fff; }
         .btn-status { background: var(--accent-blue); color: #fff; }
+        .btn-use { background: #ff9800; color: #000; }
 
         .search-box { width: 100%; margin-bottom: 12px; padding: 8px 12px; border-radius: 8px; border: 1px solid #444; background: #222; color: #fff; font-size: 0.9rem; }
 
-        .item-list { list-style: none; display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow-y: auto; }
+        .item-list { list-style: none; display: flex; flex-direction: column; gap: 8px; max-height: 48vh; overflow-y: auto; }
         .item-card { background: #262626; padding: 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; gap: 10px; border-left: 4px solid var(--accent); }
         .item-card.wait { border-left-color: var(--warning); }
         .item-card.done { border-left-color: var(--accent-blue); opacity: 0.8; }
@@ -69,11 +69,11 @@
                     <input type="text" id="jobDevice" placeholder="Dispositivo (es. iPhone 13)">
                 </div>
                 <div class="form-row">
-                    <input type="text" id="jobIssue" placeholder="Intervento (es. Cambio Display)">
+                    <input type="text" id="jobIssue" placeholder="Intervento / Ricambio">
                     <input type="date" id="jobDate">
                 </div>
                 <div class="form-row">
-                    <input type="number" id="jobPrice" placeholder="Prezzo €">
+                    <input type="number" id="jobPrice" placeholder="Prezzo al Cliente €">
                     <select id="jobStatus">
                         <option value="In Corso">🔧 In Corso</option>
                         <option value="Attesa Ricambi">⏳ Attesa Ricambi</option>
@@ -90,7 +90,7 @@
             </div>
         </div>
 
-        <!-- COLONNA DESTRA: MAGAZZINO E LISTINO -->
+        <!-- COLONNA DESTRA: MAGAZZINO E LISTINO CATALOGO -->
         <div>
             <div class="panel">
                 <h2>📦 Magazzino Fisico</h2>
@@ -104,11 +104,11 @@
             </div>
 
             <div class="panel">
-                <h2>💶 Listino Prezzi di Riferimento</h2>
-                <input type="text" id="searchPriceList" class="search-box" placeholder="🔍 Cerca nel listino..." oninput="render()">
+                <h2>💶 Listino Costi Fornitore (Catalogo)</h2>
+                <input type="text" id="searchPriceList" class="search-box" placeholder="🔍 Cerca ricambio (es. 11, 12, display, batteria)..." oninput="render()">
                 <div class="form-row" style="margin-top: 8px;">
                     <input type="text" id="priceItem" placeholder="Nome Ricambio / Modello">
-                    <input type="number" id="priceValue" placeholder="Prezzo €" style="max-width: 100px;">
+                    <input type="number" id="priceValue" placeholder="Costo Netto €" style="max-width: 100px;">
                 </div>
                 <button class="btn-add" style="background:var(--accent-blue); color:#fff;" onclick="addPriceListItem()">+ Aggiungi a Listino</button>
                 <ul id="priceList" class="item-list" style="margin-top: 12px;"></ul>
@@ -119,12 +119,32 @@
     <script>
         let jobs = JSON.parse(localStorage.getItem('mobilab_jobs')) || [];
         let inventory = JSON.parse(localStorage.getItem('mobilab_inv')) || [];
-        let priceList = JSON.parse(localStorage.getItem('mobilab_prices')) || [
-            { id: 1, name: 'Display iPhone 11 (OLED)', price: 45 },
-            { id: 2, name: 'Display iPhone 12 / 12 Pro (OLED)', price: 55 },
-            { id: 3, name: 'Batteria iPhone 11', price: 20 },
-            { id: 4, name: 'Batteria iPhone 12 / 12 Pro', price: 25 }
+        
+        // Listino ampliato con prezzi reali di mercato / cataloghi di riferimento
+        let defaultPrices = [
+            { id: 1, name: 'Display iPhone X (OLED GX)', price: 35 },
+            { id: 2, name: 'Display iPhone X (Incell iTruColor)', price: 19 },
+            { id: 3, name: 'Display iPhone 11 (Incell iTruColor)', price: 19 },
+            { id: 4, name: 'Display iPhone 11 (Pari Originale / GX)', price: 24 },
+            { id: 5, name: 'Display iPhone 12 / 12 Pro (Incell ZY/iTruColor)', price: 23 },
+            { id: 6, name: 'Display iPhone 12 / 12 Pro (OLED GX)', price: 47 },
+            { id: 7, name: 'Display iPhone 13 (Incell ZY)', price: 20 },
+            { id: 8, name: 'Display iPhone 14 (Soft OLED iTruColor)', price: 59 },
+            { id: 9, name: 'Batteria iPhone 6S', price: 12 },
+            { id: 10, name: 'Batteria iPhone X', price: 15 },
+            { id: 11, name: 'Batteria iPhone 11', price: 15 },
+            { id: 12, name: 'Batteria iPhone 11 Pro', price: 15 },
+            { id: 13, name: 'Batteria iPhone 12 / 12 Pro', price: 15 },
+            { id: 14, name: 'Batteria iPhone 12 Mini', price: 15 },
+            { id: 15, name: 'Batteria iPhone 13 / 14 (con diagnostica)', price: 22 },
+            { id: 16, name: 'Connettore Ricarica Flex iPhone 8', price: 9 },
+            { id: 17, name: 'Connettore Ricarica Flex iPhone 11 / 12', price: 12 },
+            { id: 18, name: 'Display Samsung A10 (Pari Originale)', price: 19 },
+            { id: 19, name: 'Display Samsung A14 4G / 5G (con Frame)', price: 18 },
+            { id: 20, name: 'Display Samsung A16 4G / 5G (con Frame)', price: 21 },
+            { id: 21, name: 'Batteria Samsung S21 Originale Service', price: 32 }
         ];
+        let priceList = JSON.parse(localStorage.getItem('mobilab_prices')) || defaultPrices;
 
         document.getElementById('jobDate').valueAsDate = new Date();
 
@@ -151,6 +171,13 @@
             document.getElementById('jobIssue').value = '';
             document.getElementById('jobPrice').value = '';
             saveData();
+        }
+
+        function usePriceItem(name, price) {
+            document.getElementById('jobIssue').value = name;
+            // Riporta il costo netto esatto, così decidi tu quanto ricaricare
+            document.getElementById('jobPrice').value = price; 
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function cycleStatus(id) {
@@ -269,9 +296,10 @@
                     <li class="item-card" style="border-left-color: var(--accent-blue);">
                         <div class="item-info">
                             <h3>${p.name}</h3>
-                            <p class="price-tag">Prezzo: €${p.price}</p>
+                            <p class="price-tag">Costo netto: €${p.price}</p>
                         </div>
                         <div class="actions">
+                            <button class="btn-sm btn-use" onclick="usePriceItem('${p.name.replace(/'/g, "\\'")}', ${p.price})">Usa</button>
                             <button class="btn-sm btn-del" onclick="deletePriceItem(${p.id})">✕</button>
                         </div>
                     </li>

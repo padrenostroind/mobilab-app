@@ -20,16 +20,15 @@
         header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #333; margin-bottom: 15px; }
         header h1 { font-size: 1.4rem; color: var(--accent); letter-spacing: 0.5px; }
         
-        /* Layout adattivo: 1 colonna da chiuso, 2 colonne da aperto sul Fold */
+        /* Layout adattivo per Z Fold: 1 colonna da chiuso, griglia da aperto */
         .fold-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
-        @media (min-width: 650px) {
-            .fold-grid { grid-template-columns: 1.2fr 1fr; align-items: start; }
+        @media (min-width: 750px) {
+            .fold-grid { grid-template-columns: 1fr 1fr; }
         }
 
         .panel { background: var(--card); border-radius: 12px; padding: 15px; border: 1px solid #2a2a2a; margin-bottom: 16px; }
         .panel h2 { font-size: 1.1rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #333; padding-bottom: 8px; }
 
-        /* Form compatti */
         .form-row { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
         input, select { flex: 1; min-width: 120px; padding: 10px; border-radius: 8px; border: 1px solid #444; background: #262626; color: #fff; font-size: 0.95rem; }
         button { padding: 10px 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
@@ -38,8 +37,9 @@
         .btn-del { background: var(--danger); color: #fff; }
         .btn-status { background: var(--accent-blue); color: #fff; }
 
-        /* Liste ed elementi */
-        .item-list { list-style: none; display: flex; flex-direction: column; gap: 8px; max-height: 65vh; overflow-y: auto; }
+        .search-box { width: 100%; margin-bottom: 12px; padding: 8px 12px; border-radius: 8px; border: 1px solid #444; background: #222; color: #fff; font-size: 0.9rem; }
+
+        .item-list { list-style: none; display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow-y: auto; }
         .item-card { background: #262626; padding: 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; gap: 10px; border-left: 4px solid var(--accent); }
         .item-card.wait { border-left-color: var(--warning); }
         .item-card.done { border-left-color: var(--accent-blue); opacity: 0.8; }
@@ -49,6 +49,7 @@
         .actions { display: flex; align-items: center; gap: 6px; }
         .qty-box { font-size: 1.1rem; font-weight: bold; min-width: 28px; text-align: center; }
         .low-stock { color: var(--danger); }
+        .price-tag { color: var(--accent); font-weight: bold; }
     </style>
 </head>
 <body>
@@ -68,7 +69,7 @@
                     <input type="text" id="jobDevice" placeholder="Dispositivo (es. iPhone 13)">
                 </div>
                 <div class="form-row">
-                    <input type="text" id="jobIssue" placeholder="Intervento (es. Cambio Display OLED)">
+                    <input type="text" id="jobIssue" placeholder="Intervento (es. Cambio Display)">
                     <input type="date" id="jobDate">
                 </div>
                 <div class="form-row">
@@ -76,35 +77,41 @@
                     <select id="jobStatus">
                         <option value="In Corso">🔧 In Corso</option>
                         <option value="Attesa Ricambi">⏳ Attesa Ricambi</option>
-                        <option value="Pronto">✅ Pronto da consegnare</option>
+                        <option value="Pronto">✅ Pronto</option>
                     </select>
                 </div>
-                <button class="btn-add" onclick="addJob()">+ Aggiungi al Calendario Lavori</button>
+                <button class="btn-add" onclick="addJob()">+ Aggiungi Lavoro</button>
             </div>
 
             <div class="panel">
-                <h2>📋 Lavori in Corso & Calendario</h2>
+                <h2>📋 Lavori in Corso</h2>
+                <input type="text" id="searchJob" class="search-box" placeholder="🔍 Cerca cliente o dispositivo..." oninput="render()">
                 <ul id="jobList" class="item-list"></ul>
             </div>
         </div>
 
-        <!-- COLONNA DESTRA: MAGAZZINO RICAMBI -->
+        <!-- COLONNA DESTRA: MAGAZZINO E LISTINO -->
         <div>
             <div class="panel">
-                <h2>📦 Aggiungi Articolo in Magazzino</h2>
-                <div class="form-row">
-                    <input type="text" id="invName" placeholder="Articolo (es. Display iPhone 12 OLED)">
-                    <input type="number" id="invQty" placeholder="Quantità" value="1">
-                </div>
-                <div class="form-row">
-                    <input type="text" id="invCategory" placeholder="Categoria (es. Display, Batterie, Usato)">
+                <h2>📦 Magazzino Fisico</h2>
+                <input type="text" id="searchInv" class="search-box" placeholder="🔍 Cerca ricambio in magazzino..." oninput="render()">
+                <div class="form-row" style="margin-top: 8px;">
+                    <input type="text" id="invName" placeholder="Articolo (es. Display iPhone 12)">
+                    <input type="number" id="invQty" placeholder="Q.tà" value="1" style="max-width: 80px;">
                 </div>
                 <button class="btn-add" onclick="addInv()">+ Carica in Magazzino</button>
+                <ul id="invList" class="item-list" style="margin-top: 12px;"></ul>
             </div>
 
             <div class="panel">
-                <h2>🗃️ Giacenze Magazzino</h2>
-                <ul id="invList" class="item-list"></ul>
+                <h2>💶 Listino Prezzi di Riferimento</h2>
+                <input type="text" id="searchPriceList" class="search-box" placeholder="🔍 Cerca nel listino..." oninput="render()">
+                <div class="form-row" style="margin-top: 8px;">
+                    <input type="text" id="priceItem" placeholder="Nome Ricambio / Modello">
+                    <input type="number" id="priceValue" placeholder="Prezzo €" style="max-width: 100px;">
+                </div>
+                <button class="btn-add" style="background:var(--accent-blue); color:#fff;" onclick="addPriceListItem()">+ Aggiungi a Listino</button>
+                <ul id="priceList" class="item-list" style="margin-top: 12px;"></ul>
             </div>
         </div>
     </div>
@@ -112,13 +119,19 @@
     <script>
         let jobs = JSON.parse(localStorage.getItem('mobilab_jobs')) || [];
         let inventory = JSON.parse(localStorage.getItem('mobilab_inv')) || [];
+        let priceList = JSON.parse(localStorage.getItem('mobilab_prices')) || [
+            { id: 1, name: 'Display iPhone 11 (OLED)', price: 45 },
+            { id: 2, name: 'Display iPhone 12 / 12 Pro (OLED)', price: 55 },
+            { id: 3, name: 'Batteria iPhone 11', price: 20 },
+            { id: 4, name: 'Batteria iPhone 12 / 12 Pro', price: 25 }
+        ];
 
-        // Imposta la data di oggi di default
         document.getElementById('jobDate').valueAsDate = new Date();
 
         function saveData() {
             localStorage.setItem('mobilab_jobs', JSON.stringify(jobs));
             localStorage.setItem('mobilab_inv', JSON.stringify(inventory));
+            localStorage.setItem('mobilab_prices', JSON.stringify(priceList));
             render();
         }
 
@@ -162,11 +175,8 @@
         function addInv() {
             const name = document.getElementById('invName').value.trim();
             const qty = parseInt(document.getElementById('invQty').value) || 0;
-            const cat = document.getElementById('invCategory').value.trim() || 'Generico';
-
-            if (!name) return alert("Inserisci il nome del ricambio o articolo!");
-
-            inventory.unshift({ id: Date.now(), name, qty, cat });
+            if (!name) return alert("Inserisci il nome del ricambio!");
+            inventory.unshift({ id: Date.now(), name, qty });
             document.getElementById('invName').value = '';
             document.getElementById('invQty').value = '1';
             saveData();
@@ -181,23 +191,42 @@
         }
 
         function deleteInv(id) {
-            if(confirm("Rimuovere l'articolo dal magazzino?")) {
+            if(confirm("Rimuovere l'articolo?")) {
                 inventory = inventory.filter(i => i.id !== id);
                 saveData();
             }
         }
 
+        function addPriceListItem() {
+            const name = document.getElementById('priceItem').value.trim();
+            const price = parseFloat(document.getElementById('priceValue').value) || 0;
+            if (!name) return alert("Inserisci il nome del ricambio per il listino!");
+            priceList.unshift({ id: Date.now(), name, price });
+            document.getElementById('priceItem').value = '';
+            document.getElementById('priceValue').value = '';
+            saveData();
+        }
+
+        function deletePriceItem(id) {
+            if(confirm("Eliminare dal listino?")) {
+                priceList = priceList.filter(p => p.id !== id);
+                saveData();
+            }
+        }
+
         function render() {
+            const searchJobVal = document.getElementById('searchJob').value.toLowerCase();
             const jobList = document.getElementById('jobList');
-            jobList.innerHTML = jobs.length ? '' : '<p style="color:#777; font-size:0.9rem;">Nessun lavoro in calendario.</p>';
+            const filteredJobs = jobs.filter(j => j.client.toLowerCase().includes(searchJobVal) || j.device.toLowerCase().includes(searchJobVal));
             
-            jobs.forEach(j => {
+            jobList.innerHTML = filteredJobs.length ? '' : '<p style="color:#777; font-size:0.9rem; padding:6px;">Nessun lavoro trovato.</p>';
+            filteredJobs.forEach(j => {
                 let statusClass = j.status === 'Attesa Ricambi' ? 'wait' : (j.status === 'Pronto' ? 'done' : '');
                 jobList.innerHTML += `
                     <li class="item-card ${statusClass}">
                         <div class="item-info">
                             <h3>${j.device} - ${j.client}</h3>
-                            <p>${j.issue || 'Riparazione'} • 📅 ${j.date} • 💶 €${j.price}</p>
+                            <p>${j.issue || 'Riparazione'} • 📅 ${j.date} • <span class="price-tag">€${j.price}</span></p>
                             <span class="badge">${j.status}</span>
                         </div>
                         <div class="actions">
@@ -208,22 +237,42 @@
                 `;
             });
 
+            const searchInvVal = document.getElementById('searchInv').value.toLowerCase();
             const invList = document.getElementById('invList');
-            invList.innerHTML = inventory.length ? '' : '<p style="color:#777; font-size:0.9rem;">Magazzino vuoto.</p>';
-
-            inventory.forEach(i => {
+            const filteredInv = inventory.filter(i => i.name.toLowerCase().includes(searchInvVal));
+            
+            invList.innerHTML = filteredInv.length ? '' : '<p style="color:#777; font-size:0.9rem; padding:6px;">Nessun ricambio in magazzino.</p>';
+            filteredInv.forEach(i => {
                 let lowClass = i.qty === 0 ? 'low-stock' : '';
                 invList.innerHTML += `
                     <li class="item-card">
                         <div class="item-info">
                             <h3>${i.name}</h3>
-                            <p>Categoria: ${i.cat}</p>
                         </div>
                         <div class="actions">
                             <button class="btn-sm" style="background:#444;color:#fff;" onclick="updateQty(${i.id}, -1)">-</button>
                             <span class="qty-box ${lowClass}">${i.qty}</span>
                             <button class="btn-sm" style="background:#444;color:#fff;" onclick="updateQty(${i.id}, 1)">+</button>
                             <button class="btn-sm btn-del" onclick="deleteInv(${i.id})">✕</button>
+                        </div>
+                    </li>
+                `;
+            });
+
+            const searchPriceVal = document.getElementById('searchPriceList').value.toLowerCase();
+            const priceListElement = document.getElementById('priceList');
+            const filteredPrices = priceList.filter(p => p.name.toLowerCase().includes(searchPriceVal));
+
+            priceListElement.innerHTML = filteredPrices.length ? '' : '<p style="color:#777; font-size:0.9rem; padding:6px;">Nessun prezzo in listino.</p>';
+            filteredPrices.forEach(p => {
+                priceListElement.innerHTML += `
+                    <li class="item-card" style="border-left-color: var(--accent-blue);">
+                        <div class="item-info">
+                            <h3>${p.name}</h3>
+                            <p class="price-tag">Prezzo: €${p.price}</p>
+                        </div>
+                        <div class="actions">
+                            <button class="btn-sm btn-del" onclick="deletePriceItem(${p.id})">✕</button>
                         </div>
                     </li>
                 `;
